@@ -4,12 +4,13 @@ using Domain.Models;
 
 namespace Api.Mappers
 {
-    public class MappingProfile : Profile
+    public class OrderApiMappingProfile : Profile
     {
-        public MappingProfile()
+        public OrderApiMappingProfile()
         {
             // Map from DTO to Domain Model
             CreateMap<OrderDto, Order>();
+            CreateMap<GetOrder, GetOrderDto>();
         }
     }
 }

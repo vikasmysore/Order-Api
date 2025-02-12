@@ -1,6 +1,6 @@
-﻿namespace Domain.Models
+﻿namespace Persistence.RequestModels
 {
-    public class Order
+    public class CreateOrderRequest
     {
         public required string ItemId { get; set; }
         public required int ItemCount { get; set; }

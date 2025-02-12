@@ -1,7 +1,14 @@
-﻿namespace Application.Interfaces
+﻿using Domain.Models;
+
+namespace Application.Interfaces
 {
     public interface IOrderService
     {
-        public string CreateOrder(string orderId, string itemId, int itemCount, string email);
+        public Task<GetOrder> CreateOrder(Order order);
+
+        public Task<IList<GetOrder>> GetAllOrders();
+
+        public Task<GetOrder> GetOrderByOrderNo(string orderNo);
+
     }
 }

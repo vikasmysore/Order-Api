@@ -1,12 +1,45 @@
 ﻿using Application.Interfaces;
+using AutoMapper;
+using Domain.Models;
+using Infrastructure.Interfaces;
+using Infrastructure.Models;
+using Persistence;
+using Persistence.RequestModels;
 
 namespace Application.Services
 {
-    public class OrderService : IOrderService
+    public class OrderService(InMemoryDataStore dataStore, IMapper mapper, IAzureServiceBusClient serviceBusClient) : IOrderService
     {
-        public string CreateOrder(string orderId, string itemId, int itemCount, string email)
+        public async Task<GetOrder> CreateOrder(Order order)
         {
-            throw new NotImplementedException();
+            var orderRequest = mapper.Map<CreateOrderRequest>(order);
+
+            var response = await dataStore.CreateOrder(orderRequest);
+
+            SendMessage(order);
+
+            return mapper.Map<GetOrder>(response);
+        }
+
+        public async Task<IList<GetOrder>> GetAllOrders()
+        {
+            var response = await dataStore.GetAllOrders();
+
+            return response.Select(r => mapper.Map<GetOrder>(r)).ToList();
+        }
+
+        public async Task<GetOrder> GetOrderByOrderNo(string orderNo)
+        {
+            var response = await dataStore.GetOrderByOrderNo(Guid.Parse(orderNo));
+
+            return mapper.Map<GetOrder>(response);
+        }
+
+        private async void SendMessage(Order order)
+        {
+            var orderMessage = mapper.Map<OrderMessage>(order);
+
+            await serviceBusClient.SendOrderToQueueAsync(orderMessage);
         }
     }
 }
