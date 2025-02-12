@@ -3,6 +3,7 @@ using Api.Validations;
 using Application.Extensions;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Infrastructure.Extensions;
 using Persistence.Extensions;
 
 namespace Api
@@ -17,8 +18,9 @@ namespace Api
             builder.Services.AddValidatorsFromAssemblyContaining<CreateOrderDtoValidator>();
 
             builder.Services.AddAutoMapper(cfg => { cfg.AddProfile<OrderApiMappingProfile>(); });
-            builder.Services.RegisterApplicationServices(builder.Configuration);
+            builder.Services.RegisterApplicationServices();
             builder.Services.RegisterInMemoryAdapterExtensions();
+            builder.Services.RegisterInfrastructureClients(builder.Configuration);
 
             // Add services to the container.
 

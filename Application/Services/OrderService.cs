@@ -16,9 +16,11 @@ namespace Application.Services
 
             var response = await dataStore.CreateOrder(orderRequest);
 
-            SendMessage(order);
+            var getOrder = mapper.Map<GetOrder>(response);
 
-            return mapper.Map<GetOrder>(response);
+            SendMessage(getOrder);
+
+            return getOrder;
         }
 
         public async Task<IList<GetOrder>> GetAllOrders()
@@ -35,7 +37,7 @@ namespace Application.Services
             return mapper.Map<GetOrder>(response);
         }
 
-        private async void SendMessage(Order order)
+        private async void SendMessage(GetOrder order)
         {
             var orderMessage = mapper.Map<OrderMessage>(order);
 

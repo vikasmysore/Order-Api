@@ -14,6 +14,8 @@ namespace Infrastructure.Extensions
             .GetSection("ServiceBusConfiguration")
             .Get<ServiceBusSettings>();
 
+            services.AddSingleton(serviceBusSettings);
+
             services.AddSingleton<IAzureServiceBusClient, AzureServiceBusClient>();
 
             return services;

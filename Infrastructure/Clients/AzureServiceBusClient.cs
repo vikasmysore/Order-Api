@@ -1,5 +1,6 @@
 ﻿using Azure.Messaging.ServiceBus;
 using Infrastructure.Interfaces;
+using Infrastructure.Models;
 using Infrastructure.Settings;
 
 namespace Infrastructure.Clients

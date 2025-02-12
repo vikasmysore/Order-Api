@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Domain.Models;
+using Infrastructure.Models;
 using Persistence.RequestModels;
 using Persistence.ResponseModels;
 
@@ -16,6 +17,7 @@ namespace Application.Mappers
                 .ForMember(dest => dest.ItemId, opt => opt.MapFrom(src => src.ItemId ?? ""))
                 .ForMember(dest => dest.ItemCount, opt => opt.MapFrom(src => src.ItemCount ?? 0))
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email ?? ""));
+            CreateMap<GetOrder, OrderMessage>();
         }
     }
 }
