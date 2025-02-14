@@ -18,9 +18,9 @@ jobs:
 
       # Step 2: Set up .NET SDK
       - name: Set up .NET SDK
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '6.0'
+          dotnet-version: '8.0.x'
 
       # Step 3: Restore dependencies
       - name: Restore dependencies
