@@ -36,7 +36,7 @@ jobs:
 
       # Step 6: Upload the artifact to GitHub Packages
       - name: Upload artifact to GitHub Packages
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: order-api-artifact
           path: ./output
@@ -53,7 +53,7 @@ jobs:
 
       # Step 8: Download the artifact from GitHub Packages
       - name: Download artifact from GitHub Packages
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: order-api-artifact
 
