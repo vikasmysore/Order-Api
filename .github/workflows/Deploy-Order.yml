@@ -71,28 +71,60 @@ jobs:
           client-secret: ${{ secrets.ARM_CLIENT_SECRET }}
 
       # Step 8: Fetch connection strings from Key Vault
-      - name: Fetch connection strings from Key Vault
+      # - name: Fetch connection strings from Key Vault
+      #   run: |
+      #     SERVICE_BUS_CONNECTION_STRING=$(az keyvault secret show --name ServiceBusConnectionString --vault-name kvvikasdemoorderapi --query value -o tsv)
+      #     COSMOS_DB_CONNECTION_STRING=$(az keyvault secret show --name CosmosDBConnectionString --vault-name kvvikasdemoorderapi --query value -o tsv)
+      #     echo "SERVICE_BUS_CONNECTION_STRING fetched successfully"
+      #     echo "COSMOS_DB_CONNECTION_STRING fetched successfully."
+      #     echo "SERVICE_BUS_CONNECTION_STRING=$SERVICE_BUS_CONNECTION_STRING" >> $GITHUB_ENV
+      #     if [ -z "$SERVICE_BUS_CONNECTION_STRING" ]; then
+      #       echo "Service Bus connection string is empty. Please check your Key Vault configuration." >&2
+      #       exit 1
+      #     fi
+      #     echo "COSMOS_DB_CONNECTION_STRING=$COSMOS_DB_CONNECTION_STRING" >> $GITHUB_ENV
+      #     if [ -z "$COSMOS_DB_CONNECTION_STRING" ]; then
+      #       echo "Cosmos DB connection string is empty. Please check your Key Vault configuration." >&2
+      #       exit 1
+      #     fi
+
+      - name: Fetch Service Bus connection string from Key Vault
+        id: fetch_service_bus
         run: |
           SERVICE_BUS_CONNECTION_STRING=$(az keyvault secret show --name ServiceBusConnectionString --vault-name kvvikasdemoorderapi --query value -o tsv)
-          COSMOS_DB_CONNECTION_STRING=$(az keyvault secret show --name CosmosDBConnectionString --vault-name kvvikasdemoorderapi --query value -o tsv)
-          echo "SERVICE_BUS_CONNECTION_STRING fetched successfully"
-          echo "COSMOS_DB_CONNECTION_STRING fetched successfully."
           echo "SERVICE_BUS_CONNECTION_STRING=$SERVICE_BUS_CONNECTION_STRING" >> $GITHUB_ENV
           if [ -z "$SERVICE_BUS_CONNECTION_STRING" ]; then
-            echo "Service Bus connection string is empty. Please check your Key Vault configuration." >&2
-            exit 1
-          fi
-          echo "COSMOS_DB_CONNECTION_STRING=$COSMOS_DB_CONNECTION_STRING" >> $GITHUB_ENV
-          if [ -z "$COSMOS_DB_CONNECTION_STRING" ]; then
-            echo "Cosmos DB connection string is empty. Please check your Key Vault configuration." >&2
-            exit 1
+          echo "Service Bus connection string is empty. Please check your Key Vault configuration." >&2
+          exit 1
           fi
 
-      # Step 9: Replace the connection strings in appsettings.json
-      - name: Replace connection strings in appsettings.json
+      - name: Fetch Cosmos DB connection string from Key Vault
+        id: fetch_cosmos_db
         run: |
-          sed -i "s|\"ServiceBusConfiguration\": { \"ConnectionString\": \"[secret]\" }|\"ServiceBusConfiguration\": { \"ConnectionString\": \"$SERVICE_BUS_CONNECTION_STRING\" }|" ./output/appsettings.json
-          sed -i "s|\"CosmosDbConfiguration\": { \"ConnectionString\": \"[secret]\" }|\"CosmosDbConfiguration\": { \"ConnectionString\": \"$COSMOS_DB_CONNECTION_STRING\" }|" ./output/appsettings.json
+          COSMOS_DB_CONNECTION_STRING=$(az keyvault secret show --name CosmosDBConnectionString --vault-name kvvikasdemoorderapi --query value -o tsv)
+          echo "COSMOS_DB_CONNECTION_STRING=$COSMOS_DB_CONNECTION_STRING" >> $GITHUB_ENV
+          if [ -z "$COSMOS_DB_CONNECTION_STRING" ]; then
+          echo "Cosmos DB connection string is empty. Please check your Key Vault configuration." >&2
+          exit 1
+          fi
+
+      - name: Debug environment variables
+        run: |
+          echo "SERVICE_BUS_CONNECTION_STRING=${{ env.SERVICE_BUS_CONNECTION_STRING }}"
+          echo "COSMOS_DB_CONNECTION_STRING=${{ env.COSMOS_DB_CONNECTION_STRING }}"
+
+      - name: Manually replace connection strings in appsettings.json
+      run: |
+        temp_file=$(mktemp)
+        jq '.ServiceBusConfiguration.ConnectionString = env.SERVICE_BUS_CONNECTION_STRING | 
+            .CosmosDbConfiguration.ConnectionString = env.COSMOS_DB_CONNECTION_STRING' ./output/appsettings.json > "$temp_file" \
+          && mv "$temp_file" ./output/appsettings.json
+
+      # # Step 9: Replace the connection strings in appsettings.json
+      # - name: Replace connection strings in appsettings.json
+      #   run: |
+      #     sed -i "s|\"ServiceBusConfiguration\": { \"ConnectionString\": \"[secret]\" }|\"ServiceBusConfiguration\": { \"ConnectionString\": \"$SERVICE_BUS_CONNECTION_STRING\" }|" ./output/appsettings.json
+      #     sed -i "s|\"CosmosDbConfiguration\": { \"ConnectionString\": \"[secret]\" }|\"CosmosDbConfiguration\": { \"ConnectionString\": \"$COSMOS_DB_CONNECTION_STRING\" }|" ./output/appsettings.json
 
       - name: Print contents of appsettings.json
         run: |
