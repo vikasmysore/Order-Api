@@ -9,12 +9,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/heads/feature/')
 
     steps:
       # Step 1: Checkout the code
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       # Step 2: Set up .NET SDK
       - name: Set up .NET SDK
@@ -47,10 +46,6 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
-      # Step 7: Checkout code
-      - name: Checkout code
-        uses: actions/checkout@v2
-
       # Step 8: Download the artifact from GitHub Packages
       - name: Download artifact from GitHub Packages
         uses: actions/download-artifact@v4
@@ -85,4 +80,4 @@ jobs:
         with:
           app-name: apsvcvikasdemoorderapi
           publish-profile: ${{ secrets.ARM_PUBLISH_PROFILE }}
-          package: ./output
+          package: order-api-artifact/output
