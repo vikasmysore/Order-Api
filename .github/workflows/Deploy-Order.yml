@@ -43,6 +43,10 @@ jobs:
           name: order-api-artifact
           path: ./output
 
+      - name: Adjust file permissions
+        run: chmod 644 ./output/appsettings.json
+        
+
   deploy:
     runs-on: ubuntu-latest
     permissions:
