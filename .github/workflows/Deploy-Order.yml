@@ -55,13 +55,21 @@ jobs:
         with:
           name: order-api-artifact
     
-      - name: 'Azure Login'
+      # - name: 'Azure Login'
+      #   uses: azure/login@v1
+      #   with:
+      #     client-id: ${{ secrets.ARM_CLIENT_ID }}
+      #     tenant-id: ${{ secrets.ARM_TENANT_ID }}
+      #     subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+      #     credential-type: id-token
+
+      - name: Azure Login
         uses: azure/login@v1
         with:
           client-id: ${{ secrets.ARM_CLIENT_ID }}
           tenant-id: ${{ secrets.ARM_TENANT_ID }}
           subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-          credential-type: id-token
+          client-secret: ${{ secrets.ARM_CLIENT_SECRET }}
 
       # Step 9: Set up Azure Key Vault action to fetch secrets
       - name: Set up Azure Key Vault to fetch connection strings
