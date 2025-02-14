@@ -52,17 +52,25 @@ jobs:
         with:
           name: order-api-artifact
       
-      - name: Log in to Azure using federated Service Principal
-      - name: Azure Login
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }} 
+      # - name: Log in to Azure using federated Service Principal
+      # - name: Azure Login
+      #   uses: azure/login@v1
+      #   with:
+      #   creds: ${{ secrets.AZURE_CREDENTIALS }} 
+      - name: 'Azure Login'
+        uses: azure/login@v1
+        with:
+          enable-aad: true
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          client-secret: ${{ secrets.ARM_CLIENT_SECRET }}
 
       # Step 9: Set up Azure Key Vault action to fetch secrets
       - name: Set up Azure Key Vault to fetch connection strings
         uses: azure/get-keyvault-secrets@v1
         with:
-          keyvault-name: kvvikasdemoorderapi
+          keyvault: kvvikasdemoorderapi
         env:
           AZURE_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
           AZURE_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
