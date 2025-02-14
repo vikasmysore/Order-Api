@@ -61,9 +61,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: order-api-artifact
+          path: ./output/
       
       - name: List contents of output directory after download
-        run: ls -la 
+        run: ls -la ./output
     
       # - name: 'Azure Login'
       #   uses: azure/login@v1
