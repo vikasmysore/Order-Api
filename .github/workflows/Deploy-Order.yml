@@ -97,7 +97,7 @@ jobs:
       # Step 11: Replace the connection strings in appsettings.json
       - name: Replace connection strings in appsettings.json
         run: |
-          sed -i "s|\"ConnectionString\": \"[secret]\"|\"ConnectionString\": \"${{ steps.get-secret-sa-key.outputs.service_bus_value }}\"|" ./output/appsettings.json
+          sed -i "s|\"ServiceBusConfiguration\": { \"ConnectionString\": \"[secret]\"}|\"ServiceBusConfiguration\": { \"ConnectionString\": \"${{ steps.get-secret-sa-key.outputs.service_bus_value }}\" }|" ./output/appsettings.json
           sed -i "s|\"CosmosDbConfiguration\": { \"ConnectionString\": \"[secret]\"}|\"CosmosDbConfiguration\": { \"ConnectionString\": \"${{ steps.get-secret-sa-key.outputs.cosmos_db_value }}\" }|" ./output/appsettings.json
 
       # Step 12: Deploy to Azure App Service
