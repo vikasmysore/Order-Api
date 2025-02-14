@@ -54,7 +54,7 @@ jobs:
 
       # Step 9: Set up Azure Key Vault action to fetch secrets
       - name: Set up Azure Key Vault to fetch connection strings
-        uses: azure/actions/keyvault-secrets@v1
+        uses: azure/keyvault-secrets@v1
         with:
           keyvault-name: kvvikasdemoorderapi
         env:
