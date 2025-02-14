@@ -76,13 +76,13 @@ jobs:
       - name: Set environment variables
         run: |
           echo "SERVICE_BUS_CONNECTION_STRING=$(az keyvault secret show --name ServiceBusConnectionString --vault-name kvvikasdemoorderapi --query value -o tsv)" >> $GITHUB_ENV
-          echo "COSMOS_DB_CONNECTION_STRING=$(az keyvault secret show --name CosmosDbConnectionString --vault-name kvvikasdemoorderapi --query value -o tsv)" >> $GITHUB_ENV
+          echo "COSMOS_DB_CONNECTION_STRING=$(az keyvault secret show --name CosmosDBConnectionString --vault-name kvvikasdemoorderapi --query value -o tsv)" >> $GITHUB_ENV
 
       # Step 10: Fetch connection strings from Key Vault
       - name: Set environment variables for secrets
         run: |
           echo "SERVICE_BUS_CONNECTION_STRING=$(az keyvault secret show --name ServiceBusConnectionString --vault-name kvvikasdemoorderapi --query value -o tsv)" >> $GITHUB_ENV
-          echo "COSMOS_DB_CONNECTION_STRING=$(az keyvault secret show --name CosmosDbConnectionString --vault-name kvvikasdemoorderapi --query value -o tsv)" >> $GITHUB_ENV
+          echo "COSMOS_DB_CONNECTION_STRING=$(az keyvault secret show --name CosmosDBConnectionString --vault-name kvvikasdemoorderapi --query value -o tsv)" >> $GITHUB_ENV
 
       # Step 11: Replace the connection strings in appsettings.json
       - name: Replace connection strings in appsettings.json
