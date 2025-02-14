@@ -42,6 +42,9 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     needs: build
     if: github.ref == 'refs/heads/main'
 
@@ -51,20 +54,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: order-api-artifact
-      
-      # - name: Log in to Azure using federated Service Principal
-      # - name: Azure Login
-      #   uses: azure/login@v1
-      #   with:
-      #   creds: ${{ secrets.AZURE_CREDENTIALS }} 
+    
       - name: 'Azure Login'
         uses: azure/login@v1
         with:
-          enable-aad: true
           client-id: ${{ secrets.ARM_CLIENT_ID }}
           tenant-id: ${{ secrets.ARM_TENANT_ID }}
           subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-          client-secret: ${{ secrets.ARM_CLIENT_SECRET }}
+          credential-type: id-token
 
       # Step 9: Set up Azure Key Vault action to fetch secrets
       - name: Set up Azure Key Vault to fetch connection strings
@@ -80,25 +77,6 @@ jobs:
         run: |
           echo "SERVICE_BUS_CONNECTION_STRING=$(az keyvault secret show --name ServiceBusConnectionString --vault-name kvvikasdemoorderapi --query value -o tsv)" >> $GITHUB_ENV
           echo "COSMOS_DB_CONNECTION_STRING=$(az keyvault secret show --name CosmosDbConnectionString --vault-name kvvikasdemoorderapi --query value -o tsv)" >> $GITHUB_ENV
-
-      # - name: Retrieve secret from Key Vault
-      #   id: get-secret-sa-key
-      #   uses: azure/cli@v2
-      #   with:
-      #     azcliversion: latest
-      #     inlineScript: |
-      #       # Variables  
-      #       KEY_VAULT_NAME=kvvikasdemoorderapi  
-      #       SERVICE_BUS_SECRET=ServiceBusConnectionString 
-      #       COSMOS_DB_SECRET= CosmosDbConnectionString
-
-      #       # Retrieve secret from Key Vault  
-      #       SERVICE_BUS_KEY=$(az keyvault secret show --name $SERVICE_BUS_SECRET --vault-name $KEY_VAULT_NAME --query value -o tsv)
-      #       COSMOS_DB_KEY=$(az keyvault secret show --name $COSMOS_DB_SECRET --vault-name $KEY_VAULT_NAME --query value -o tsv)
-
-      #       # You can also set the retrieved secret as an output for use in subsequent steps in the workflow  
-      #       echo "::set-output name=service_bus_value::$SERVICE_BUS_KEY"
-      #       echo "::set-output name=cosmos_db_value::$COSMOS_DB_KEY"
 
       # Step 10: Fetch connection strings from Key Vault
       - name: Set environment variables for secrets
