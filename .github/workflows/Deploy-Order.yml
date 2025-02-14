@@ -63,7 +63,7 @@ jobs:
           name: order-api-artifact
       
       - name: List contents of output directory after download
-        run: ls -la order-api-artifact/output
+        run: ls -la order-api-artifact
     
       # - name: 'Azure Login'
       #   uses: azure/login@v1
