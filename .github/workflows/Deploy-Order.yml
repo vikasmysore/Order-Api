@@ -1,0 +1,69 @@
+name: Deploy Order API to Azure App Service
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Order-Api/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Step 2: Set up Azure CLI to interact with Azure
+      - name: Set up Azure CLI
+        uses: azure/setup-azurecli@v1
+
+      # Step 3: Log in to Azure using Service Principal credentials
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+
+      # Step 4: Retrieve secrets from Azure Key Vault
+      - name: Get secrets from Azure Key Vault
+        id: keyvault-secrets
+        run: |
+          az keyvault secret show --name "ServiceBusConnectionString" --vault-name "your-keyvault-name" --query "value" -o tsv > servicebus-connection.txt
+          az keyvault secret show --name "CosmosDbConnectionString" --vault-name "your-keyvault-name" --query "value" -o tsv > cosmosdb-connection.txt
+
+      # Step 5: Replace connection string values in appsettings.json
+      - name: Replace connection strings in appsettings.json
+        run: |
+          sed -i "s|\[secret\]|$(cat servicebus-connection.txt)|g" Order-Api/appsettings.json
+          sed -i "s|\[secret\]|$(cat cosmosdb-connection.txt)|g" Order-Api/appsettings.json
+
+      # Step 6: Install dependencies (dotnet specific example)
+      - name: Install .NET dependencies
+        run: |
+          cd Order-Api
+          dotnet restore
+
+      # Step 7: Build the application
+      - name: Build the application
+        run: |
+          cd Order-Api
+          dotnet build --configuration Release
+
+      # Step 8: Publish the application
+      - name: Publish the application
+        run: |
+          cd Order-Api
+          dotnet publish --configuration Release --output ./publish
+
+      # Step 9: Deploy to Azure App Service
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: apsvcvikasdemoorderapi
+          slot-name: production
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+          package: ./Order-Api/publish
