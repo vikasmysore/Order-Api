@@ -72,19 +72,14 @@ jobs:
           client-secret: ${{ secrets.ARM_CLIENT_SECRET }}
 
       # Step 9: Set up Azure Key Vault action to fetch secrets
-      - name: Set up Azure Key Vault to fetch connection strings
-        uses: azure/get-keyvault-secrets@v1
-        with:
-          keyvault: kvvikasdemoorderapi
-        env:
-          AZURE_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-          AZURE_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-          AZURE_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-
-      - name: Set environment variables
-        run: |
-          echo "SERVICE_BUS_CONNECTION_STRING=$(az keyvault secret show --name ServiceBusConnectionString --vault-name kvvikasdemoorderapi --query value -o tsv)" >> $GITHUB_ENV
-          echo "COSMOS_DB_CONNECTION_STRING=$(az keyvault secret show --name CosmosDBConnectionString --vault-name kvvikasdemoorderapi --query value -o tsv)" >> $GITHUB_ENV
+      # - name: Set up Azure Key Vault to fetch connection strings
+      #   uses: azure/get-keyvault-secrets@v1
+      #   with:
+      #     keyvault: kvvikasdemoorderapi
+      #   env:
+      #     AZURE_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      #     AZURE_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      #     AZURE_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
 
       # Step 10: Fetch connection strings from Key Vault
       - name: Set environment variables for secrets
