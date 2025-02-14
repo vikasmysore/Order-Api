@@ -75,7 +75,7 @@ jobs:
         run: |
           SERVICE_BUS_CONNECTION_STRING=$(az keyvault secret show --name ServiceBusConnectionString --vault-name kvvikasdemoorderapi --query value -o tsv)
           COSMOS_DB_CONNECTION_STRING=$(az keyvault secret show --name CosmosDBConnectionString --vault-name kvvikasdemoorderapi --query value -o tsv)
-          echo "SERVICE_BUS_CONNECTION_STRING fetched successfully - ${{SERVICE_BUS_CONNECTION_STRING}}"
+          echo "SERVICE_BUS_CONNECTION_STRING fetched successfully"
           echo "COSMOS_DB_CONNECTION_STRING fetched successfully."
           echo "SERVICE_BUS_CONNECTION_STRING=$SERVICE_BUS_CONNECTION_STRING" >> $GITHUB_ENV
           if [ -z "$SERVICE_BUS_CONNECTION_STRING" ]; then
