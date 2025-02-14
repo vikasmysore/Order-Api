@@ -114,9 +114,9 @@ jobs:
           echo "COSMOS_DB_CONNECTION_STRING=${{ env.COSMOS_DB_CONNECTION_STRING }}"
 
       - name: Manually replace connection strings in appsettings.json
-      run: |
-        temp_file=$(mktemp)
-        jq '.ServiceBusConfiguration.ConnectionString = env.SERVICE_BUS_CONNECTION_STRING | 
+        run: |
+          temp_file=$(mktemp)
+          jq '.ServiceBusConfiguration.ConnectionString = env.SERVICE_BUS_CONNECTION_STRING | 
             .CosmosDbConfiguration.ConnectionString = env.COSMOS_DB_CONNECTION_STRING' ./output/appsettings.json > "$temp_file" \
           && mv "$temp_file" ./output/appsettings.json
 
