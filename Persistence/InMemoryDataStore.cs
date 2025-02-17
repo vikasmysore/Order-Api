@@ -17,6 +17,7 @@ namespace Persistence
             {
                 order = new OrderEntity()
                 {
+                    PartitionKey = orderRequest.Email,
                     OrderNo = Guid.NewGuid(),
                     Email = orderRequest.Email,
                     ItemCount = orderRequest.ItemCount,

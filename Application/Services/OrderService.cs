@@ -4,19 +4,23 @@ using Domain.Models;
 using Infrastructure.Interfaces;
 using Infrastructure.Models;
 using Persistence;
+using Persistence.Repository.Interfaces;
 using Persistence.RequestModels;
 
 namespace Application.Services
 {
-    public class OrderService(InMemoryDataStore dataStore, IMapper mapper, IAzureServiceBusClient serviceBusClient) : IOrderService
+    public class OrderService(InMemoryDataStore dataStore, IMapper mapper, IAzureServiceBusClient serviceBusClient,
+        IOrderRepository orderRepository) : IOrderService
     {
         public async Task<GetOrder> CreateOrder(Order order)
         {
             var orderRequest = mapper.Map<CreateOrderRequest>(order);
 
-            var response = await dataStore.CreateOrder(orderRequest);
+            //var response = await dataStore.CreateOrder(orderRequest);
 
-            var getOrder = mapper.Map<GetOrder>(response);
+            var cosmosResponse = await orderRepository.CreateOrder(orderRequest);
+
+            var getOrder = mapper.Map<GetOrder>(cosmosResponse);
 
             SendMessage(getOrder);
 
@@ -25,16 +29,20 @@ namespace Application.Services
 
         public async Task<IList<GetOrder>> GetAllOrders()
         {
-            var response = await dataStore.GetAllOrders();
+            //var response = await dataStore.GetAllOrders();
 
-            return response.Select(r => mapper.Map<GetOrder>(r)).ToList();
+            var cosmosResponse = await orderRepository.GetAllOrders();
+
+            return cosmosResponse.Select(r => mapper.Map<GetOrder>(r)).ToList();
         }
 
         public async Task<GetOrder> GetOrderByOrderNo(string orderNo)
         {
-            var response = await dataStore.GetOrderByOrderNo(Guid.Parse(orderNo));
+            //var response = await dataStore.GetOrderByOrderNo(Guid.Parse(orderNo));
 
-            return mapper.Map<GetOrder>(response);
+            var cosmosResponse = await orderRepository.GetOrderByOrderNo(orderNo);
+
+            return mapper.Map<GetOrder>(cosmosResponse);
         }
 
         private async void SendMessage(GetOrder order)
