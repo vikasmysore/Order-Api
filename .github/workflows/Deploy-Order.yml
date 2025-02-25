@@ -69,7 +69,7 @@ jobs:
           sudo update-ca-certificates
 
       - name: Run tests
-        run: dotnet test --no-build --verbosity normal
+        run: dotnet test --configuration Release --verbosity normal
 
   # test:
   #   runs-on: windows-latest  # Windows runner for native emulator
