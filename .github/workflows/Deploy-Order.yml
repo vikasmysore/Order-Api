@@ -42,12 +42,6 @@ jobs:
         with:
           name: order-api-artifact
           path: ./output
-      
-      # Step: Clean up Cosmos Emulator
-      - name: Clean up Cosmos Emulator
-        run: |
-          docker stop cosmosdb
-          docker rm cosmosdb
     
   test:
     runs-on: windows-latest  # Windows runner for native emulator
@@ -93,7 +87,7 @@ jobs:
         shell: pwsh
         run: |
           Get-Process -Name 'Microsoft.Azure.Cosmos.Emulator*' | Stop-Process -Force
-          
+
   deploy:
     runs-on: ubuntu-latest
     permissions:
