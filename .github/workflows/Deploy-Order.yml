@@ -67,13 +67,14 @@ jobs:
           
           sudo cp cosmos_emulator.cert /usr/local/share/ca-certificates/
           sudo update-ca-certificates
-      - name: List directory contents
-        run: |
-          echo "Listing directory contents:"
-          ls -la ./output/
+
+      # - name: List directory contents
+      #   run: |
+      #     echo "Listing directory contents:"
+      #     ls -la ./output/
 
       - name: Run tests
-        run: dotnet test --configuration Release --verbosity normal Order-Api/Tests.csproj
+        run: cd Tests && dotnet test --no-build --verbosity normal
 
   # test:
   #   runs-on: windows-latest  # Windows runner for native emulator
