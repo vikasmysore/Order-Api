@@ -51,7 +51,7 @@ jobs:
         run: dotnet build --configuration Release
 
       - name: Run tests
-        run: dotnet test --no-build --verbosity normal
+        run:  cd ./Tests dotnet test --no-build --verbosity normal
 
       # Step 7: Publish the application (Create the artifact)
       - name: Publish application
