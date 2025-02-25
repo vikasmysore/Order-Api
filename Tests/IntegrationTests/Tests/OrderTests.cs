@@ -3,17 +3,14 @@ using Tests.IntegrationTests.Fixture;
 using System.Net.Http.Json;
 using Xunit;
 using System.Text.Json;
-using Infrastructure.Interfaces;
 
 namespace Tests.IntegrationTests.Tests
 {
     public class OrderTests : BaseTest
     {
         private Guid OrderId;
-        private readonly IAzureServiceBusClient _busClient;
-        public OrderTests(CustomWebApplicationFactory factory, IAzureServiceBusClient busClient) : base(factory)
+        public OrderTests(CustomWebApplicationFactory factory) : base(factory)
         {
-            _busClient = busClient;
         }
 
         [Fact]
