@@ -10,42 +10,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    steps:
-      # Step 1: Checkout the code
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # Step 2: Set up .NET SDK
-      - name: Set up .NET SDK
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: '8.0.x'
-      
-      # Step 4: Restore dependencies
-      - name: Restore dependencies
-        run: dotnet restore
-
-      # Step 6: Build the application
-      - name: Build application
-        run: dotnet build --configuration Release
-
-      # Step 7: Publish the application (Create the artifact)
-      - name: Publish application
-        run: dotnet publish --configuration Release --output ./output
-
-      - name: List contents of output directory
-        run: ls -la ./output/
-
-      # Step 8: Upload the artifact to GitHub Packages
-      - name: Upload artifact to GitHub Packages
-        uses: actions/upload-artifact@v4
-        with:
-          name: order-api-artifact
-          path: ./output
-  test:
-    runs-on: ubuntu-latest
-    needs: build
-
     services:
       cosmosdb:
         image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
@@ -60,6 +24,16 @@ jobs:
       COSMOSDB_CONTAINER_NAME: "Orders"
 
     steps:
+      # Step 1: Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up .NET SDK
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+      
       - name: Export Cosmos DB Emulator Certificate
         run: |
           sudo apt update && sudo apt install -y openssl
@@ -67,14 +41,64 @@ jobs:
           
           sudo cp cosmos_emulator.cert /usr/local/share/ca-certificates/
           sudo update-ca-certificates
+      
+      # Step 4: Restore dependencies
+      - name: Restore dependencies
+        run: dotnet restore
+
+      # Step 6: Build the application
+      - name: Build application
+        run: dotnet build --configuration Release
+
+      - name: Run tests
+        run: dotnet test --no-build --verbosity normal
+
+      # Step 7: Publish the application (Create the artifact)
+      - name: Publish application
+        run: dotnet publish --configuration Release --output ./output
+
+      - name: List contents of output directory
+        run: ls -la ./output/
+
+      # Step 8: Upload the artifact to GitHub Packages
+      - name: Upload artifact to GitHub Packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: order-api-artifact
+          path: ./output
+  # test:
+  #   runs-on: ubuntu-latest
+  #   needs: build
+
+  #   services:
+  #     cosmosdb:
+  #       image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+  #       ports:
+  #         - 8081:8081
+  #       env:
+  #         PROTOCOL: https
+
+  #   env:
+  #     COSMOSDB_CONNECTION_STRING: "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="
+  #     COSMOSDB_DATABASE_NAME: "OrderTestDb"
+  #     COSMOSDB_CONTAINER_NAME: "Orders"
+
+  #   steps:
+  #     - name: Export Cosmos DB Emulator Certificate
+  #       run: |
+  #         sudo apt update && sudo apt install -y openssl
+  #         openssl s_client -connect localhost:8081 </dev/null | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > cosmos_emulator.cert
+          
+  #         sudo cp cosmos_emulator.cert /usr/local/share/ca-certificates/
+  #         sudo update-ca-certificates
 
       # - name: List directory contents
       #   run: |
       #     echo "Listing directory contents:"
       #     ls -la ./output/
 
-      - name: Run tests
-        run: cd Tests && dotnet test --no-build --verbosity normal
+      # - name: Run tests
+      #   run: cd Tests && dotnet test --no-build --verbosity normal
 
   # test:
   #   runs-on: windows-latest  # Windows runner for native emulator
