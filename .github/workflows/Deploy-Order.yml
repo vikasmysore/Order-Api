@@ -20,29 +20,80 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
-
-      # Step 3: Restore dependencies
+      
+      # Step 4: Restore dependencies
       - name: Restore dependencies
         run: dotnet restore
 
-      # Step 4: Build the application
+      # Step 6: Build the application
       - name: Build application
         run: dotnet build --configuration Release
 
-      # Step 5: Publish the application (Create the artifact)
+      # Step 7: Publish the application (Create the artifact)
       - name: Publish application
         run: dotnet publish --configuration Release --output ./output
 
       - name: List contents of output directory
         run: ls -la ./output/
 
-      # Step 6: Upload the artifact to GitHub Packages
+      # Step 8: Upload the artifact to GitHub Packages
       - name: Upload artifact to GitHub Packages
         uses: actions/upload-artifact@v4
         with:
           name: order-api-artifact
           path: ./output
+      
+      # Step: Clean up Cosmos Emulator
+      - name: Clean up Cosmos Emulator
+        run: |
+          docker stop cosmosdb
+          docker rm cosmosdb
+    
+  test:
+    runs-on: windows-latest  # Windows runner for native emulator
+    needs: build
 
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Start Cosmos Emulator
+        shell: pwsh
+        run: |
+          $emulatorPath = "${env:ProgramFiles}\Azure Cosmos DB Emulator\Microsoft.Azure.Cosmos.Emulator.exe"
+          Start-Process $emulatorPath -ArgumentList "/NoUI","/NoExplorer","/NoFirewall","/EnableMongoDbEndpoint=3.6"
+          Start-Sleep -Seconds 30  # Wait for emulator initialization
+
+      - name: Trust Emulator Certificate
+        shell: pwsh
+        run: |
+          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+          $cert.Import('https://localhost:8081/_explorer/emulator.pem')
+          $store = New-Object System.Security.Cryptography.X509Certificates.X509Store(
+              [System.Security.Cryptography.X509Certificates.StoreName]::Root,
+              'LocalMachine'
+          )
+          $store.Open('ReadWrite')
+          $store.Add($cert)
+          $store.Close()
+
+      - name: Run Integration Tests
+        run: dotnet test --configuration Release --verbosity normal
+        env:
+          CosmosDb__Endpoint: https://localhost:8081
+          CosmosDb__Key: C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
+
+      - name: Stop Cosmos Emulator
+        if: always()
+        shell: pwsh
+        run: |
+          Get-Process -Name 'Microsoft.Azure.Cosmos.Emulator*' | Stop-Process -Force
+          
   deploy:
     runs-on: ubuntu-latest
     permissions:
@@ -52,7 +103,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
-      # Step 7: Download the artifact from GitHub Packages
+      # Step 9: Download the artifact from GitHub Packages
       - name: Download artifact from GitHub Packages
         uses: actions/download-artifact@v4
         with:
@@ -62,7 +113,7 @@ jobs:
       - name: List contents of output directory after download
         run: ls -la ./output
 
-      # Step 8: Azure Login
+      # Step 10: Azure Login
       - name: Azure Login
         uses: azure/login@v1
         with:
@@ -71,7 +122,7 @@ jobs:
           subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
           client-secret: ${{ secrets.ARM_CLIENT_SECRET }}
 
-      # Step 9: Fetch connection string for Service Bus from Key Vault
+      # Step 11: Fetch connection string for Service Bus from Key Vault
       - name: Fetch Service Bus connection string from Key Vault
         id: fetch_service_bus
         run: |
@@ -82,7 +133,7 @@ jobs:
           exit 1
           fi
         
-      # Step 10: Fetch connection string for Service Bus from Key Vault
+      # Step 12: Fetch connection string for Service Bus from Key Vault
       - name: Fetch Cosmos DB connection string from Key Vault
         id: fetch_cosmos_db
         run: |
@@ -93,7 +144,7 @@ jobs:
           exit 1
           fi
 
-      # Step 11: Replace the connection strings in appsettings.json
+      # Step 13: Replace the connection strings in appsettings.json
       - name: Manually replace connection strings in appsettings.json
         run: |
           temp_file=$(mktemp)
@@ -101,7 +152,7 @@ jobs:
             .CosmosDbConfiguration.ConnectionString = env.COSMOS_DB_CONNECTION_STRING' ./output/appsettings.json > "$temp_file" \
           && mv "$temp_file" ./output/appsettings.json
 
-      # Step 12: Deploy to Azure App Service
+      # Step 14: Deploy to Azure App Service
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v2
         with:
