@@ -59,12 +59,12 @@ jobs:
       - name: Start Cosmos Emulator
         shell: pwsh
         run: |
-          # Cleanup previous instances
+          # Stop any existing emulator instances
           Get-Process -Name 'Microsoft.Azure.Cosmos.Emulator*' -ErrorAction SilentlyContinue | Stop-Process -Force
-
+              
           $emulatorPath = "${env:ProgramFiles}\Azure Cosmos DB Emulator\Microsoft.Azure.Cosmos.Emulator.exe"
-
-          # Start with minimal settings
+              
+          # Start emulator with minimal settings
           Start-Process $emulatorPath -ArgumentList @(
               "/NoUI",
               "/NoExplorer",
@@ -73,34 +73,23 @@ jobs:
               "/Key=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
               "/PartitionCount=1"
           ) -RedirectStandardOutput emulator.log -RedirectStandardError emulator-error.log
-
-          # Wait for status endpoint (with SSL bypass)
+              
+          # Wait for emulator to become available
           $retryCount = 0
-          $maxRetries = 30  # Increased to 30 retries
+          $maxRetries = 30
           $success = $false
-
-          # Allow insecure SSL for initial checks
-          Add-Type @"
-              using System.Net;
-              using System.Security.Cryptography.X509Certificates;
-              public class TrustAllCertsPolicy : ICertificatePolicy {
-                  public bool CheckValidationResult(
-                      ServicePoint srvPoint,
-                      X509Certificate certificate,
-                      WebRequest request,
-                      int certificateProblem
-                  ) => true;
-              }
-          "@      
-          [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
-
-          while ($retryCount -lt $maxRetries) {
+              
+          while ($retryCount -lt $maxRetries -and -not $success) {
               try {
-                  $response = Invoke-WebRequest -Uri "https://127.0.0.1:8081/_status" -UseBasicParsing -DisableKeepAlive -TimeoutSec 10
+                  $response = Invoke-WebRequest -Uri "https://127.0.0.1:8081/_explorer/emulator.pem" `
+                      -SkipCertificateCheck `
+                      -DisableKeepAlive `
+                      -UseBasicParsing `
+                      -TimeoutSec 10
+                  
                   if ($response.StatusCode -eq 200) {
                       Write-Host "Emulator ready at attempt $retryCount"
                       $success = $true
-                      break
                   }
               } catch {
                   Write-Host "Waiting for emulator... (Attempt $retryCount/$maxRetries)"
@@ -108,7 +97,7 @@ jobs:
                   Start-Sleep -Seconds 10
               }
           }
-
+              
           if (-not $success) {
               Get-Content emulator.log
               Get-Content emulator-error.log
