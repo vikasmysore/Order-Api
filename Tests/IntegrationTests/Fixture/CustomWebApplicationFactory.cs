@@ -45,11 +45,19 @@ namespace Tests.IntegrationTests.Fixture
             );
                 if (dbContextDescriptor != null) services.Remove(dbContextDescriptor);
 
+                CosmosClientOptions options = new()
+                {
+                    HttpClientFactory = () => new HttpClient(new HttpClientHandler()
+                    {
+                        ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+                    }),
+                    ConnectionMode = ConnectionMode.Gateway,
+                };
+
                 // Create a new CosmosClient for setup/cleanup
                 var cosmosClient = new CosmosClient(
                     "https://localhost:8081",
-                    "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="
-                );
+                    "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==", options);
 
                 // Initialize database (EF Core will handle container creation)
                 cosmosClient.CreateDatabaseIfNotExistsAsync(_databaseName).GetAwaiter().GetResult();
