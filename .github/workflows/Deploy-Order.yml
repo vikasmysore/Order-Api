@@ -45,7 +45,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     needs: build
-    
+
     services:
       cosmosdb:
         image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
@@ -69,7 +69,7 @@ jobs:
           sudo update-ca-certificates
 
       - name: Run tests
-        run: cd dotnet-app && dotnet test --no-build --verbosity normal
+        run: dotnet test --no-build --verbosity normal
 
   # test:
   #   runs-on: windows-latest  # Windows runner for native emulator
