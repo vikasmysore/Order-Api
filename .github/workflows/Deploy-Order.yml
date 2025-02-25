@@ -33,6 +33,18 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
+
+      - name: Wait for Cosmos DB Emulator to be ready
+        run: |
+          for i in {1..30}; do
+            if openssl s_client -connect localhost:8081 </dev/null 2>&1 | grep -q 'BEGIN CERTIFICATE'; then
+              echo "Emulator is ready."
+              break
+            else
+              echo "Waiting for emulator..."
+              sleep 2
+            fi
+          done
       
       - name: Export Cosmos DB Emulator Certificate
         run: |
