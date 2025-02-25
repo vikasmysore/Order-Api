@@ -59,65 +59,60 @@ jobs:
       - name: Start Cosmos Emulator
         shell: pwsh
         run: |
-          # Kill any existing emulator processes
+          # Cleanup previous instances
           Get-Process -Name 'Microsoft.Azure.Cosmos.Emulator*' -ErrorAction SilentlyContinue | Stop-Process -Force
-              
+
           $emulatorPath = "${env:ProgramFiles}\Azure Cosmos DB Emulator\Microsoft.Azure.Cosmos.Emulator.exe"
-              
-          # Start emulator with optimized parameters
+
+          # Start with minimal settings
           Start-Process $emulatorPath -ArgumentList @(
               "/NoUI",
               "/NoExplorer",
               "/NoFirewall",
               "/AllowNetworkAccess",
               "/Key=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
-              "/PartitionCount=1",
-              "/EnableMongoDbEndpoint=3.6"
+              "/PartitionCount=1"
           ) -RedirectStandardOutput emulator.log -RedirectStandardError emulator-error.log
-              
-          # Wait for port availability
+
+          # Wait for status endpoint (with SSL bypass)
           $retryCount = 0
-          $maxRetries = 20  # Increased from 10
+          $maxRetries = 30  # Increased to 30 retries
           $success = $false
-              
+
+          # Allow insecure SSL for initial checks
+          Add-Type @"
+              using System.Net;
+              using System.Security.Cryptography.X509Certificates;
+              public class TrustAllCertsPolicy : ICertificatePolicy {
+                  public bool CheckValidationResult(
+                      ServicePoint srvPoint,
+                      X509Certificate certificate,
+                      WebRequest request,
+                      int certificateProblem
+                  ) => true;
+              }
+          "@      
+          [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
+
           while ($retryCount -lt $maxRetries) {
               try {
-                  Write-Host "Checking port 8081 (Attempt $retryCount/$maxRetries)..."
-                  $tcpTest = Test-NetConnection -ComputerName 127.0.0.1 -Port 8081 -InformationLevel Quiet
-                  if ($tcpTest) {
-                      Write-Host "Port 8081 is open"
+                  $response = Invoke-WebRequest -Uri "https://127.0.0.1:8081/_status" -UseBasicParsing -DisableKeepAlive -TimeoutSec 10
+                  if ($response.StatusCode -eq 200) {
+                      Write-Host "Emulator ready at attempt $retryCount"
                       $success = $true
                       break
                   }
-              } catch {}
-              
-              $retryCount++
-              Start-Sleep -Seconds 10
+              } catch {
+                  Write-Host "Waiting for emulator... (Attempt $retryCount/$maxRetries)"
+                  $retryCount++
+                  Start-Sleep -Seconds 10
+              }
           }
-              
+
           if (-not $success) {
               Get-Content emulator.log
               Get-Content emulator-error.log
               throw "Emulator failed to start after $maxRetries attempts"
-          }
-              
-          # Additional readiness check
-          $retryCount = 0
-          while ($retryCount -lt 10) {
-              try {
-                  Write-Host "Verifying emulator health (Attempt $retryCount/10)..."
-                  $response = Invoke-WebRequest -Uri "https://127.0.0.1:8081/_explorer/emulator.pem" -UseBasicParsing -DisableKeepAlive -TimeoutSec 30
-                  if ($response.StatusCode -eq 200) {
-                      Write-Host "Emulator health check passed"
-                      break
-                  }
-              } catch {
-                  $retryCount++
-                  if ($retryCount -ge 10) {
-                      throw "Final health check failed: $_"
-                  }
-                  Start-Sleep -Seconds 5
-              }
           }
 
       - name: Trust Emulator Certificate
