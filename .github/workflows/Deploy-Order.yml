@@ -66,15 +66,48 @@ jobs:
       - name: Trust Emulator Certificate
         shell: pwsh
         run: |
-          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-          $cert.Import('https://localhost:8081/_explorer/emulator.pem')
-          $store = New-Object System.Security.Cryptography.X509Certificates.X509Store(
-              [System.Security.Cryptography.X509Certificates.StoreName]::Root,
-              'LocalMachine'
-          )
-          $store.Open('ReadWrite')
-          $store.Add($cert)
-          $store.Close()
+          # Allow insecure SSL for initial connection
+          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+          $progressPreference = 'silentlyContinue'
+        
+          try {
+            # Download certificate with retries
+            $retryCount = 0
+            $maxRetries = 5
+            do {
+                try {
+                    $certContent = (Invoke-WebRequest -Uri 'https://localhost:8081/_explorer/emulator.pem' -DisableKeepAlive -UseBasicParsing).Content
+                    break
+                } catch {
+                    $retryCount++
+                    if ($retryCount -ge $maxRetries) { throw }
+                    Start-Sleep -Seconds 10
+                }
+            } while ($true)
+
+            # Create certificate object
+            $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+                [System.Text.Encoding]::UTF8.GetBytes($certContent)
+            
+            # Add to certificate store
+            $store = New-Object System.Security.Cryptography.X509Certificates.X509Store(
+                [System.Security.Cryptography.X509Certificates.StoreName]::Root,
+                'CurrentUser'
+            )
+            $store.Open('ReadWrite')
+            $store.Add($cert)
+            $store.Close()
+            
+            # Verify installation
+            $installed = Get-ChildItem Cert:\CurrentUser\Root | 
+                        Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
+            if (-not $installed) {
+                throw "Certificate not installed successfully"
+            }
+          } catch {
+            Write-Error "Certificate trust failed: $_"
+            exit 1
+          }
 
       - name: Run Integration Tests
         run: dotnet test --configuration Release --verbosity normal
