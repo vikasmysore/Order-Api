@@ -17,6 +17,8 @@ namespace Tests.IntegrationTests.Fixture
     {
         private readonly string _databaseName;
         private const string ContainerName = "Orders";
+        private const string URL = "https://localhost:8081";
+        private const string ApiKey = "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
 
         public CustomWebApplicationFactory()
         {
@@ -30,8 +32,8 @@ namespace Tests.IntegrationTests.Fixture
             {
                 config.AddInMemoryCollection(new Dictionary<string, string>
             {
-                { "CosmosDb:Endpoint", "https://localhost:8081" },
-                { "CosmosDb:Key", "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==" },
+                { "CosmosDb:Endpoint", URL },
+                { "CosmosDb:Key",  ApiKey},
                 { "CosmosDb:DatabaseName", _databaseName },
                 { "CosmosDb:ContainerName", ContainerName }
             });
@@ -56,8 +58,8 @@ namespace Tests.IntegrationTests.Fixture
 
                 // Create a new CosmosClient for setup/cleanup
                 var cosmosClient = new CosmosClient(
-                    "https://localhost:8081",
-                    "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==", options);
+                    URL,
+                    ApiKey, options);
 
                 // Initialize database (EF Core will handle container creation)
                 cosmosClient.CreateDatabaseIfNotExistsAsync(_databaseName).GetAwaiter().GetResult();
@@ -68,8 +70,8 @@ namespace Tests.IntegrationTests.Fixture
                 services.AddDbContext<OrderDbContext>(options =>
                 {
                     options.UseCosmos(
-                        "https://localhost:8081",
-                        "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
+                        URL,
+                        ApiKey,
                         _databaseName
                     );
                 });
