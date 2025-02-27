@@ -1,0 +1,216 @@
+name: Manually Build And Test Order API 
+
+on:
+  workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      cosmosdb:
+        image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+        ports:
+          - 8081:8081
+        env:
+          PROTOCOL: https
+
+    env:
+      COSMOSDB_CONNECTION_STRING: "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="
+      COSMOSDB_DATABASE_NAME: "OrderTestDb"
+      COSMOSDB_CONTAINER_NAME: "Orders"
+
+    steps:
+      # Step 1: Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up .NET SDK
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Wait for Cosmos DB Emulator to be ready
+        run: |
+          for i in {1..30}; do
+            if openssl s_client -connect localhost:8081 </dev/null 2>&1 | grep -q 'BEGIN CERTIFICATE'; then
+              echo "Emulator is ready."
+              break
+            else
+              echo "Waiting for emulator..."
+              sleep 2
+            fi
+          done
+      
+      - name: Export Cosmos DB Emulator Certificate
+        run: |
+          sudo apt update && sudo apt install -y openssl
+          openssl s_client -connect localhost:8081 </dev/null | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > cosmos_emulator.cert
+          
+          sudo cp cosmos_emulator.cert /usr/local/share/ca-certificates/
+          sudo update-ca-certificates
+      
+      # Step 4: Restore dependencies
+      - name: Restore dependencies
+        run: dotnet restore
+
+      # Step 6: Build the application
+      - name: Build application
+        run: dotnet build --configuration Release
+
+      - name: Run tests
+        run:  dotnet test --configuration Release --verbosity normal
+
+  # test:
+  #   runs-on: ubuntu-latest
+  #   needs: build
+
+  #   services:
+  #     cosmosdb:
+  #       image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+  #       ports:
+  #         - 8081:8081
+  #       env:
+  #         PROTOCOL: https
+
+  #   env:
+  #     COSMOSDB_CONNECTION_STRING: "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="
+  #     COSMOSDB_DATABASE_NAME: "OrderTestDb"
+  #     COSMOSDB_CONTAINER_NAME: "Orders"
+
+  #   steps:
+  #     - name: Export Cosmos DB Emulator Certificate
+  #       run: |
+  #         sudo apt update && sudo apt install -y openssl
+  #         openssl s_client -connect localhost:8081 </dev/null | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > cosmos_emulator.cert
+          
+  #         sudo cp cosmos_emulator.cert /usr/local/share/ca-certificates/
+  #         sudo update-ca-certificates
+
+      # - name: List directory contents
+      #   run: |
+      #     echo "Listing directory contents:"
+      #     ls -la ./output/
+
+      # - name: Run tests
+      #   run: cd Tests && dotnet test --no-build --verbosity normal
+
+  # test:
+  #   runs-on: windows-latest  # Windows runner for native emulator
+  #   needs: build
+
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+
+  #     - name: Set up .NET SDK
+  #       uses: actions/setup-dotnet@v3
+  #       with:
+  #         dotnet-version: '8.0.x'
+
+  #     - name: Start Cosmos Emulator
+  #       shell: pwsh
+  #       run: |
+  #         # Stop any existing emulator instances
+  #         Get-Process -Name 'Microsoft.Azure.Cosmos.Emulator*' -ErrorAction SilentlyContinue | Stop-Process -Force
+
+  #         $emulatorPath = "${env:ProgramFiles}\Azure Cosmos DB Emulator\Microsoft.Azure.Cosmos.Emulator.exe"
+
+  #         # Start emulator with minimal settings
+  #         Start-Process $emulatorPath -ArgumentList @(
+  #             "/NoUI",
+  #             "/NoExplorer",
+  #             "/NoFirewall",
+  #             "/AllowNetworkAccess",
+  #             "/Key=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
+  #             "/PartitionCount=1"
+  #         ) -RedirectStandardOutput emulator.log -RedirectStandardError emulator-error.log
+
+  #         # Wait for emulator to become available
+  #         $retryCount = 0
+  #         $maxRetries = 30
+  #         $success = $false
+
+  #         while ($retryCount -lt $maxRetries -and -not $success) {
+  #             try {
+  #                 $response = Invoke-WebRequest -Uri "https://127.0.0.1:8081/_explorer/emulator.pem" `
+  #                     -SkipCertificateCheck `
+  #                     -DisableKeepAlive `
+  #                     -UseBasicParsing `
+  #                     -TimeoutSec 10
+
+  #                 if ($response.StatusCode -eq 200) {
+  #                     Write-Host "Emulator ready at attempt $retryCount"
+  #                     $success = $true
+  #                 }
+  #             } catch {
+  #                 Write-Host "Waiting for emulator... (Attempt $retryCount/$maxRetries)"
+  #                 $retryCount++
+  #                 Start-Sleep -Seconds 10
+  #             }
+  #         }
+
+  #         if (-not $success) {
+  #             Get-Content emulator.log
+  #             Get-Content emulator-error.log
+  #             throw "Emulator failed to start after $maxRetries attempts"
+  #         }
+
+      # - name: Trust Emulator Certificate
+      #   shell: pwsh
+      #   run: |
+      #     # Allow insecure SSL for initial connection
+      #     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+      #     $progressPreference = 'silentlyContinue'
+        
+      #     try {
+      #       # Download certificate with retries
+      #       $retryCount = 0
+      #       $maxRetries = 5
+      #       do {
+      #           try {
+      #               $certContent = (Invoke-WebRequest -Uri 'https://localhost:8081/_explorer/emulator.pem' -DisableKeepAlive -UseBasicParsing).Content
+      #               break
+      #           } catch {
+      #               $retryCount++
+      #               if ($retryCount -ge $maxRetries) { throw }
+      #               Start-Sleep -Seconds 10
+      #           }
+      #       } while ($true)
+
+      #       # Create certificate object
+      #       $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+      #           [System.Text.Encoding]::UTF8.GetBytes($certContent)
+      #       )
+      #       # Add to certificate store
+      #       $store = New-Object System.Security.Cryptography.X509Certificates.X509Store(
+      #           [System.Security.Cryptography.X509Certificates.StoreName]::Root,
+      #           'CurrentUser'
+      #       )
+      #       $store.Open('ReadWrite')
+      #       $store.Add($cert)
+      #       $store.Close()
+            
+      #       # Verify installation
+      #       $installed = Get-ChildItem Cert:\CurrentUser\Root | 
+      #                   Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
+      #       if (-not $installed) {
+      #           throw "Certificate not installed successfully"
+      #       }
+      #     } catch {
+      #       Write-Error "Certificate trust failed: $_"
+      #       exit 1
+      #     }
+
+      # - name: Run Integration Tests
+      #   run: dotnet test --configuration Release --verbosity normal
+      #   env:
+      #     CosmosDb__Endpoint: https://localhost:8081
+      #     CosmosDb__Key: C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
+
+      # - name: Stop Cosmos Emulator
+      #   if: always()
+      #   shell: pwsh
+      #   run: |
+      #     Get-Process -Name 'Microsoft.Azure.Cosmos.Emulator*' | Stop-Process -Force
