@@ -19,7 +19,7 @@ namespace Api
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAdB2C"));
+                .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAdB2CRopc"));
 
             builder.Services.AddFluentValidationAutoValidation();
             builder.Services.AddValidatorsFromAssemblyContaining<CreateOrderDtoValidator>();
