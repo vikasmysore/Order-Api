@@ -9,16 +9,20 @@ jobs:
 
     services:
       cosmosdb:
-        image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+        image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest
         ports:
           - 8081:8081
+          - 10251-10255:10251-10255
         env:
           PROTOCOL: https
+          AZURE_COSMOS_EMULATOR_PARTITION_COUNT: 20
+          AZURE_COSMOS_EMULATOR_IP_ADDRESS_OVERRIDE: 127.0.0.1
+          AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE: false
+          COSMOSDB_CONNECTION_STRING: "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="
+          COSMOSDB_DATABASE_NAME: "OrderTestDb"
+          COSMOSDB_CONTAINER_NAME: "Orders"
 
-    env:
-      COSMOSDB_CONNECTION_STRING: "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="
-      COSMOSDB_DATABASE_NAME: "OrderTestDb"
-      COSMOSDB_CONTAINER_NAME: "Orders"
+        options: '--health-cmd "curl -k https://127.0.0.1:8081/_explorer/emulator.pem > /dev/null 2>&1 || exit 1" --health-interval 5s --health-timeout 2s --health-retries 10'
 
     steps:
       # Step 1: Checkout the code
@@ -50,6 +54,15 @@ jobs:
           
           sudo cp cosmos_emulator.cert /usr/local/share/ca-certificates/
           sudo update-ca-certificates
+      
+      - name: Trust the Cosmos DB Emulator SSL certificate
+        run: |
+          # Download and trust the self-signed certificate
+          curl -k https://127.0.0.1:8081/_explorer/emulator.pem -o emulator-cert.pem
+          sudo cp emulator-cert.pem /usr/local/share/ca-certificates/
+          sudo update-ca-certificates
+          # For Java/Maven, also update the keystore:
+          sudo keytool -importcert -file emulator-cert.pem -alias cosmosdb -keystore $JAVA_HOME/lib/security/cacerts -storepass changeit -noprompt
       
       # Step 4: Restore dependencies
       - name: Restore dependencies
