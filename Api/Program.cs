@@ -1,4 +1,5 @@
 using Api.Mappers;
+using Api.ResponseFormatters;
 using Api.Validations;
 using Application.Extensions;
 using FluentValidation;
@@ -17,6 +18,8 @@ namespace Api
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAdB2CRopc"));
@@ -65,6 +68,8 @@ namespace Api
             });
 
             var app = builder.Build();
+
+            app.UseMiddleware<GlobalExceptionMiddleware>();
 
             using (var scope = app.Services.CreateScope())
             {
