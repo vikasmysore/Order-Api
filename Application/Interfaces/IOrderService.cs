@@ -6,9 +6,9 @@ namespace Application.Interfaces
     {
         public Task<GetOrder> CreateOrder(Order order);
 
-        public Task<IList<GetOrder>> GetAllOrders();
+        public Task<IList<GetOrder>> GetAllOrders(string email);
 
-        public Task<GetOrder> GetOrderByOrderNo(string orderNo);
+        public Task<GetOrder> GetOrderByOrderNo(string orderNo, string email);
 
     }
 }

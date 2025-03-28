@@ -1,6 +1,9 @@
-﻿using Persistence.Entities;
+﻿using CrossCutting.ResultResponse;
+using Persistence.Entities;
 using Persistence.RequestModels;
 using Persistence.ResponseModels;
+using static Persistence.ResponseModels.CreateOrderResponse;
+using static Persistence.ResponseModels.GetAllOrdersReponse;
 
 namespace Persistence
 {
@@ -11,7 +14,6 @@ namespace Persistence
         public async Task<CreateOrderResponse> CreateOrder(CreateOrderRequest orderRequest)
         {
             OrderEntity order = null;
-            CreateOrderResponse orderResponse = new CreateOrderResponse();
 
             if (orderRequest != null)
             {
@@ -26,39 +28,50 @@ namespace Persistence
 
                 orders.Add(order);
 
-                orderResponse.OrderNo = order.OrderNo;
-                orderResponse.Email = order.Email;
-                orderResponse.ItemCount = order.ItemCount;
-                orderResponse.ItemId = order.ItemId;
+                var response = new CreateOrderResponse(new CreateOrderResponseEntity()
+                {
+                    OrderNo = order.OrderNo,
+                    Email = order.Email,
+                    ItemCount = order.ItemCount,
+                    ItemId = order.ItemId
+                });
+
+                return await Task.FromResult(response);
             }
 
-            return await Task.FromResult(orderResponse ?? new CreateOrderResponse());
+            return await Task.FromResult(new CreateOrderResponse(new ErrorResponse("Could not create the order.")));
         }
 
-        public async Task<IList<CreateOrderResponse>> GetAllOrders()
+        public async Task<GetAllOrdersReponse> GetAllOrders(string email)
         {
-            return await Task.FromResult(orders.Select(o => new CreateOrderResponse
+            var response = orders.Where(o => o.Email == email).ToList();
+
+            if (response == null || response.Count == 0)
             {
-                OrderNo = o.OrderNo,
-                Email = o.Email,
-                ItemCount = o.ItemCount,
-                ItemId = o.ItemId
-            }).ToList());
+                return new GetAllOrdersReponse(new ErrorResponse("No orders to show."));
+            }
+
+            var orderList = response.Select(r => new CreateOrderResponseEntity() { OrderNo = r.OrderNo, Email = r.Email, ItemCount = r.ItemCount, ItemId = r.ItemId });
+
+            return await Task.FromResult(new GetAllOrdersReponse(new GetAllOrdersReponseEntity() { Orders = orderList }));
         }
 
-        public async Task<CreateOrderResponse> GetOrderByOrderNo(Guid orderNo)
+        public async Task<CreateOrderResponse> GetOrderByOrderNo(Guid orderNo, string email)
         {
-            var order = orders.FirstOrDefault(o => o.OrderNo == orderNo);
-            CreateOrderResponse orderResponse = new CreateOrderResponse();
+            var order = orders.FirstOrDefault(o => o.OrderNo == orderNo && o.Email == email);
+
             if (order == null)
             {
-                return orderResponse;
+                return await Task.FromResult(new CreateOrderResponse(new ErrorResponse("Order Not Found")));
             }
 
-            orderResponse.OrderNo = order.OrderNo;
-            orderResponse.Email = order.Email;
-            orderResponse.ItemCount = order.ItemCount;
-            orderResponse.ItemId = order.ItemId;
+            var orderResponse = new CreateOrderResponse(new CreateOrderResponseEntity()
+            {
+                OrderNo = order.OrderNo,
+                Email = order.Email,
+                ItemCount = order.ItemCount,
+                ItemId = order.ItemId
+            });
 
             return await Task.FromResult(orderResponse);
         }

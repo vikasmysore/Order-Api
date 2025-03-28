@@ -10,6 +10,7 @@ namespace Application.Extensions
         public static IServiceCollection RegisterApplicationServices(this IServiceCollection services)
         {
             services.AddScoped<IOrderService, OrderService>();
+            services.AddScoped<IUserInfoService, UserInfoService>();
             services.AddAutoMapper(cfg => { cfg.AddProfile<OrderApplicationMappingProfile>(); });
 
             return services;
