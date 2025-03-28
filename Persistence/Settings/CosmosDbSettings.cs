@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Settings
+﻿namespace Persistence.Settings
 {
     public class CosmosDbSettings
     {
